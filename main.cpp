@@ -25,7 +25,6 @@ std::string frhdEncode(const int& number) {
     return std::string(ptr);
 }
 
-
 cv::Mat readImage(const std::string& imagePath, const bool& grayscale) {
     cv::Mat image = cv::imread(imagePath, grayscale ? cv::IMREAD_GRAYSCALE : cv::IMREAD_UNCHANGED);
 
@@ -37,8 +36,37 @@ cv::Mat readImage(const std::string& imagePath, const bool& grayscale) {
     return image;
 }
 
+void thresholdImage(cv::Mat& image, const int& upperThreshold, const int& lowerThreshold) {
+    cv::Mat grayImage;
+
+    // convert to grayscale if nessecary
+    if (image.channels() != 1) {
+	cv::cvtColor(image, grayImage, cv::COLOR_BGR2GRAY);
+    } else {
+	grayImage = image;
+    }
+
+    for (int row = 0; row < grayImage.rows; ++row) {
+	for (int col = 0; col < grayImage.cols; ++col) {
+	    const uchar pixelValue = grayImage.at<uchar>(row, col);
+	    if (pixelValue > upperThreshold) { // white
+		std::cout << "white" << std::endl;
+	    } else if (pixelValue > lowerThreshold) { // gray
+		std::cout << "gray" << std::endl;
+	    } else { // black
+		std::cout << "black" << std::endl;
+	    }
+	}
+    }
+
+
+}
+
 int main(int argc, char* argv[]) {
 
-    cv::Mat imageData = readImage(argv[1], true);
+    const std::string imagePath = argv[1];
+
+    cv::Mat imageData = readImage(imagePath, false);
+    thresholdImage(imageData, 100, 200);
     return 0;
 }
