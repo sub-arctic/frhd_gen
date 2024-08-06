@@ -72,10 +72,7 @@ cv::Mat readImage(const std::string& imagePath, const bool& grayscale) {
     return image;
 }
 
-int blackThreshold = 75; // Threshold for black
-int grayThreshold = 160;  // Threshold for gray
-
-std::vector<RLERun> processImage(const cv::Mat& image, const int& lowerThreshold, const int& upperThreshold) {
+std::vector<RLERun> processImage(const cv::Mat& image, const int& blackThreshold, const int& grayThreshold) {
 
     std::vector<cv::Point> grayPixels, blackPixels;
 
@@ -112,20 +109,20 @@ std::vector<RLERun> processImage(const cv::Mat& image, const int& lowerThreshold
 		    RLERun run;
 		    run.y = row;
 
-		    // Check the number of neighbors
+		    // check the number of neighbors
 		    int neighbors = 0;
-		    if (col - count > 0) neighbors++; // Left neighbor
-		    if (col < grayImage.cols - 1) neighbors++; // Right neighbor
+		    if (col - count > 0) neighbors++; // left neighbor
+		    if (col < grayImage.cols - 1) neighbors++; // right neighbor
 
-		    // Adjust the run coordinates if there are fewer than 2 neighbors
+		    // adjust the run coordinates if there are fewer than 2 neighbors
 		    int startX = col - count + 1;
 		    if (neighbors < 2) {
-			startX += 2; // Adjust by +2
+			startX += 2; // adjust by +2
 		    }
 
 		    run.xValues.resize(count);
 		    for (int i = 0; i < count; ++i) {
-			run.xValues[i] = startX + i; // Set adjusted startX
+			run.xValues[i] = startX + i; // set adjusted startx
 		    }
 		    run.color = currentColor;
 		    rleRuns.push_back(run);
@@ -138,20 +135,20 @@ std::vector<RLERun> processImage(const cv::Mat& image, const int& lowerThreshold
 	    RLERun run;
 	    run.y = row;
 
-	    // Check the number of neighbors for the last run
+	    // check the number of neighbors for the last run
 	    int neighbors = 0;
-	    if (grayImage.cols - count - 1 >= 0) neighbors++; // Left neighbor
-	    if (grayImage.cols - 1 < grayImage.cols) neighbors++; // Right neighbor
+	    if (grayImage.cols - count - 1 >= 0) neighbors++; // left neighbor
+	    if (grayImage.cols - 1 < grayImage.cols) neighbors++; // right neighbor
 
-	    // Adjust the run coordinates if there are fewer than 2 neighbors
+	    // adjust the run coordinates if there are fewer than 2 neighbors
 	    int startX = image.cols - count;
 	    if (neighbors < 2) {
-		startX += 2; // Adjust by +2
+		startX += 2; // adjust by +2
 	    }
 
 	    run.xValues.resize(count);
 	    for (int i = 0; i < count; ++i) {
-		run.xValues[i] = startX + i; // Set adjusted startX
+		run.xValues[i] = startX + i; // set adjusted startx
 	    }
 	    run.color = currentColor;
 	    rleRuns.push_back(run);
@@ -160,7 +157,7 @@ std::vector<RLERun> processImage(const cv::Mat& image, const int& lowerThreshold
     return rleRuns;
 }
 
-// encode cartesian coordinates using frhdEncode
+// encode cartesian coordinates using frhdencode
 std::string encodeLine(int x1, int y1, int x2, int y2)
 {
     std::stringstream result;
@@ -183,26 +180,26 @@ int main(int argc, char* argv[]) {
     cv::Mat imageData = readImage(imagePath, false);
     std::vector<RLERun> rleRuns = processImage(imageData, 100, 200);
 
-    // for (const auto& run : rleRuns) {
-    //     std::cout << run.toString() << std::endl;
+    // for (const auto& run : rleruns) {
+    //     std::cout << run.tostring() << std::endl;
     // }
     for (const auto& run : rleRuns) {
         if (run.color == BLACK && run.xValues.size() > 0) {
-            int x1 = run.xValues.front(); // First x-coordinate
-            int x2 = run.xValues.back();  // Last x-coordinate
-            int y = run.y;                 // Y-coordinate
+            int x1 = run.xValues.front(); // first x-coordinate
+            int x2 = run.xValues.back();  // last x-coordinate
+            int y = run.y;                 // y-coordinate
             std::string encodedLine = encodeLine(x1, y, x2, y);
-            std::cout << encodedLine; // Output the encoded line
+            std::cout << encodedLine; // output the encoded line
         }
     }
     std::cout << "#";
     for (const auto& run : rleRuns) {
         if (run.color == GRAY && run.xValues.size() > 0) {
-            int x1 = run.xValues.front(); // First x-coordinate
-            int x2 = run.xValues.back();  // Last x-coordinate
-            int y = run.y;                 // Y-coordinate
+            int x1 = run.xValues.front(); // first x-coordinate
+            int x2 = run.xValues.back();  // last x-coordinate
+            int y = run.y;                 // y-coordinate
             std::string encodedLine = encodeLine(x1, y, x2, y);
-            std::cout << encodedLine; // Output the encoded line
+            std::cout << encodedLine; // output the encoded line
         }
     }
     std::cout << "#" << std::endl;
