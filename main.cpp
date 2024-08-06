@@ -1,6 +1,7 @@
 #include <iostream>
 #include <opencv2/opencv.hpp>
 #include <stdexcept>
+#include <algorithm>
 
 // convert integer to base32-like format supported by freeriderhd
 std::string frhdEncode(const int& number) {
@@ -76,6 +77,20 @@ std::string encodeLine(int x1, int y1, int x2, int y2)
     return result.str();
 }
 
+// wip optimisation for solid-line drawing
+void optimize(std::vector<cv::Point>& blackPixels, std::vector<cv::Point>& grayPixels) {
+    std::vector<cv::Point> pixels = blackPixels;
+    // sort pixel values by y:
+    std::sort(pixels.begin(), pixels.end(),
+	[](const cv::Point& a, const cv::Point&b) {
+	    return a.y < b.y;
+	});
+
+    for (const auto& point : pixels) {
+	std::cout << "Point(" << point.x << ", " << point.y << ")" << std::endl;
+    }
+}
+
 
 int main(int argc, char* argv[]) {
 
@@ -83,9 +98,7 @@ int main(int argc, char* argv[]) {
 
     cv::Mat imageData = readImage(imagePath, false);
     std::pair<std::vector<cv::Point>, std::vector<cv::Point>> pixels = thresholdImage(imageData, 100, 200);
+    optimize(pixels.first, pixels.second);
 
-    for (const cv::Point& coordinate : pixels.second) {
-	std::cout << coordinate.x << " " << coordinate.y << std::endl;
-    }
     return 0;
 }
