@@ -91,51 +91,73 @@ std::vector<RLERun> processImage(const cv::Mat& image, const int& lowerThreshold
     std::vector<RLERun> rleRuns;
 
     for (int row = 0; row < grayImage.rows; ++row) {
-	int count = 0;
-	PixelColor currentColor = BLACK;
+    int count = 0;
+    PixelColor currentColor = BLACK;
 
-	for (int col = 0; col < grayImage.cols; ++col) {
-            const uchar pixelValue = grayImage.at<uchar>(row, col);
-	    
-	    PixelColor color;
-	    if (pixelValue < blackThreshold) {
-		color = BLACK;
-	    } else if (pixelValue >= blackThreshold && pixelValue < grayThreshold) {
-		color = GRAY;
-	    } else {
-		color = WHITE;
-	    }
+    for (int col = 0; col < grayImage.cols; ++col) {
+        const uchar pixelValue = grayImage.at<uchar>(row, col);
+        
+        PixelColor color;
+        if (pixelValue < blackThreshold) {
+            color = BLACK;
+        } else if (pixelValue >= blackThreshold && pixelValue < grayThreshold) {
+            color = GRAY;
+        } else {
+            color = WHITE;
+        }
 
+        if (color == currentColor) {
+            count++;
+        } else {
+            if (count > 0) {
+                RLERun run;
+                run.y = row;
 
-	    if (color == currentColor) {
-		count++;
-	    } else {
-		if (count > 0) {
-		    RLERun run;
-		    run.y = row;
-		    run.xValues.resize(count);
-		    for (int i = 0; i < count; ++i) {
-			run.xValues[i] = col - count + 1;
-		    }
-		    run.color = currentColor;
-		    rleRuns.push_back(run);
-		}
-		currentColor = color;
-		count = 1;
-	    }
+                // Check the number of neighbors
+                int neighbors = 0;
+                if (col - count > 0) neighbors++; // Left neighbor
+                if (col < grayImage.cols - 1) neighbors++; // Right neighbor
 
-	}
-	if (count > 0) {
-	    RLERun run;
-	    run.y = row;
-	    run.xValues.resize(count);
-	    for (int i = 0; i < count; ++i) {
-		run.xValues[i] = image.cols - count + i;
-	    }
-	    run.color = currentColor;
-	    rleRuns.push_back(run);
-	}
+                // Adjust the run coordinates if there are fewer than 2 neighbors
+                int startX = col - count + 1;
+                if (neighbors < 2) {
+                    startX += 2; // Adjust by +2
+                }
+
+                run.xValues.resize(count);
+                for (int i = 0; i < count; ++i) {
+                    run.xValues[i] = startX + i; // Set adjusted startX
+                }
+                run.color = currentColor;
+                rleRuns.push_back(run);
+            }
+            currentColor = color;
+            count = 1;
+        }
     }
+    if (count > 0) {
+        RLERun run;
+        run.y = row;
+
+        // Check the number of neighbors for the last run
+        int neighbors = 0;
+        if (grayImage.cols - count - 1 >= 0) neighbors++; // Left neighbor
+        if (grayImage.cols - 1 < grayImage.cols) neighbors++; // Right neighbor
+
+        // Adjust the run coordinates if there are fewer than 2 neighbors
+        int startX = image.cols - count;
+        if (neighbors < 2) {
+            startX += 2; // Adjust by +2
+        }
+
+        run.xValues.resize(count);
+        for (int i = 0; i < count; ++i) {
+            run.xValues[i] = startX + i; // Set adjusted startX
+        }
+        run.color = currentColor;
+        rleRuns.push_back(run);
+    }
+}
 
     return rleRuns;
 }
