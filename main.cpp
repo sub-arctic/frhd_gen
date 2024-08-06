@@ -35,8 +35,11 @@ cv::Mat readImage(const std::string& imagePath, const bool& grayscale) {
 
     return image;
 }
+std::pair<std::vector<cv::Point>, std::vector<cv::Point>>
+thresholdImage(const cv::Mat& image, const int& lowerThreshold, const int& upperThreshold) {
 
-void thresholdImage(cv::Mat& image, const int& upperThreshold, const int& lowerThreshold) {
+    std::vector<cv::Point> grayPixels, blackPixels;
+    
     cv::Mat grayImage;
 
     // convert to grayscale if nessecary
@@ -47,26 +50,42 @@ void thresholdImage(cv::Mat& image, const int& upperThreshold, const int& lowerT
     }
 
     for (int row = 0; row < grayImage.rows; ++row) {
-	for (int col = 0; col < grayImage.cols; ++col) {
-	    const uchar pixelValue = grayImage.at<uchar>(row, col);
-	    if (pixelValue > upperThreshold) { // white
-		std::cout << "white" << std::endl;
-	    } else if (pixelValue > lowerThreshold) { // gray
-		std::cout << "gray" << std::endl;
-	    } else { // black
-		std::cout << "black" << std::endl;
-	    }
-	}
+        for (int col = 0; col < grayImage.cols; ++col) {
+            const uchar pixelValue = grayImage.at<uchar>(row, col);
+            if (pixelValue > upperThreshold) { // white
+		// do nothing
+            } else if (pixelValue > lowerThreshold) { // gray
+		grayPixels.emplace_back(cv::Point(row, col));
+            } else { // black
+		blackPixels.emplace_back(cv::Point(row, col));
+            }
+        }
     }
 
-
+    std::pair<std::vector<cv::Point>, std::vector<cv::Point>> pixels = std::make_pair(blackPixels, grayPixels);
+    return pixels;
 }
+
+
+// encode cartesian coordinates using frhdEncode
+std::string encodeLine(int x1, int y1, int x2, int y2)
+{
+    std::stringstream result;
+    result << frhdEncode(x1) 
+	<< " " << frhdEncode(y1) << " " << frhdEncode(x2) << " " << frhdEncode(y2) << ",";
+    return result.str();
+}
+
 
 int main(int argc, char* argv[]) {
 
     const std::string imagePath = argv[1];
 
     cv::Mat imageData = readImage(imagePath, false);
-    thresholdImage(imageData, 100, 200);
+    std::pair<std::vector<cv::Point>, std::vector<cv::Point>> pixels = thresholdImage(imageData, 100, 200);
+
+    for (const cv::Point& coordinate : pixels.second) {
+	std::cout << coordinate.x << " " << coordinate.y << std::endl;
+    }
     return 0;
 }
