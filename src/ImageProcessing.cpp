@@ -9,6 +9,7 @@ cv::Mat readImage(const std::string& imagePath, const bool& grayscale) {
     return image;
 }
 
+// performance is calculated as O(m * n), where m is the number of rows in the image, and n is the number of columns
 std::vector<RLERun> processImage(const cv::Mat& image, const int& blackThreshold, const int& grayThreshold) {
     std::vector<cv::Point> grayPixels, blackPixels;
 

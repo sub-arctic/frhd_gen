@@ -2,6 +2,7 @@
 #include <sstream>
 #include <cmath>
 
+// performance is given as O(1)
 std::string frhdEncode(const int& number) {
     static const char alphabet[] = "0123456789abcdefghijklmnopqrstuv";
     static const std::size_t maxDigits = 8;
@@ -24,6 +25,7 @@ std::string frhdEncode(const int& number) {
     return std::string(ptr);
 }
 
+// performance is given as O(1)
 std::string encodeLine(int x1, int y1, int x2, int y2) {
     std::stringstream result;
     result << frhdEncode(x1) 
