@@ -1,7 +1,42 @@
 #include <iostream>
 #include <opencv2/opencv.hpp>
 #include <stdexcept>
-#include <algorithm>
+#include <sstream>
+
+struct Point {
+    int x;
+    int y;
+};
+
+struct Line {
+    Point p1;
+    Point p2;
+};
+
+enum PixelColor {
+    WHITE = 0,
+    BLACK = 1,
+    GRAY = 2
+};
+
+struct RLERun {
+    int y;
+    std::vector<int> xValues;
+    PixelColor color;
+
+    std::string toString() const {
+	std::ostringstream oss;
+	oss << y << ": ";
+	for (size_t i = 0; i < xValues.size(); ++i) {
+	    if (i > 0) {
+		oss << ", ";
+	    }
+	    oss << xValues[i];
+	}
+	oss << "(Color: " << (color == BLACK ? "Black" : (color == GRAY ? "Gray" : "White")) << ")";
+	return oss.str();
+    }
+};
 
 // convert integer to base32-like format supported by freeriderhd
 std::string frhdEncode(const int& number) {
@@ -16,7 +51,7 @@ std::string frhdEncode(const int& number) {
 
     do {
 	*(--ptr) = alphabet[absNumber % 32]; // corresponding index in char alphabet[]
-	absNumber /= 32; // prepare for next iteration 
+	absNumber /= 32; // prepare for next iteration
     } while (absNumber > 0); // continue until number > 0
 
     if (number < 0) {
@@ -36,11 +71,14 @@ cv::Mat readImage(const std::string& imagePath, const bool& grayscale) {
 
     return image;
 }
-std::pair<std::vector<cv::Point>, std::vector<cv::Point>>
-thresholdImage(const cv::Mat& image, const int& lowerThreshold, const int& upperThreshold) {
+
+int blackThreshold = 50; // Threshold for black
+int grayThreshold = 100;  // Threshold for gray
+
+std::vector<RLERun> processImage(const cv::Mat& image, const int& lowerThreshold, const int& upperThreshold) {
 
     std::vector<cv::Point> grayPixels, blackPixels;
-    
+
     cv::Mat grayImage;
 
     // convert to grayscale if nessecary
@@ -49,24 +87,58 @@ thresholdImage(const cv::Mat& image, const int& lowerThreshold, const int& upper
     } else {
 	grayImage = image;
     }
+    
+    std::vector<RLERun> rleRuns;
 
     for (int row = 0; row < grayImage.rows; ++row) {
-        for (int col = 0; col < grayImage.cols; ++col) {
+	int count = 0;
+	PixelColor currentColor = BLACK;
+
+	for (int col = 0; col < grayImage.cols; ++col) {
             const uchar pixelValue = grayImage.at<uchar>(row, col);
-            if (pixelValue > upperThreshold) { // white
-		// do nothing
-            } else if (pixelValue > lowerThreshold) { // gray
-		grayPixels.emplace_back(cv::Point(row, col));
-            } else { // black
-		blackPixels.emplace_back(cv::Point(row, col));
-            }
-        }
+	    
+	    PixelColor color;
+	    if (pixelValue < blackThreshold) {
+		color = BLACK;
+	    } else if (pixelValue >= blackThreshold && pixelValue < grayThreshold) {
+		color = GRAY;
+	    } else {
+		color = WHITE;
+	    }
+
+
+	    if (color == currentColor) {
+		count++;
+	    } else {
+		if (count > 0) {
+		    RLERun run;
+		    run.y = row;
+		    run.xValues.resize(count);
+		    for (int i = 0; i < count; ++i) {
+			run.xValues[i] = col - count + 1;
+		    }
+		    run.color = currentColor;
+		    rleRuns.push_back(run);
+		}
+		currentColor = color;
+		count = 1;
+	    }
+
+	}
+	if (count > 0) {
+	    RLERun run;
+	    run.y = row;
+	    run.xValues.resize(count);
+	    for (int i = 0; i < count; ++i) {
+		run.xValues[i] = image.cols - count + i;
+	    }
+	    run.color = currentColor;
+	    rleRuns.push_back(run);
+	}
     }
 
-    std::pair<std::vector<cv::Point>, std::vector<cv::Point>> pixels = std::make_pair(blackPixels, grayPixels);
-    return pixels;
+    return rleRuns;
 }
-
 
 // encode cartesian coordinates using frhdEncode
 std::string encodeLine(int x1, int y1, int x2, int y2)
@@ -79,26 +151,40 @@ std::string encodeLine(int x1, int y1, int x2, int y2)
 
 // wip optimisation for solid-line drawing
 void optimize(std::vector<cv::Point>& blackPixels, std::vector<cv::Point>& grayPixels) {
-    std::vector<cv::Point> pixels = blackPixels;
-    // sort pixel values by y:
-    std::sort(pixels.begin(), pixels.end(),
-	[](const cv::Point& a, const cv::Point&b) {
-	    return a.y < b.y;
-	});
-
-    for (const auto& point : pixels) {
-	std::cout << "Point(" << point.x << ", " << point.y << ")" << std::endl;
+    for (const cv::Point& point : blackPixels) {
+	std::cout << "x " << point.x << " y " << point.y << std::endl;
     }
 }
-
 
 int main(int argc, char* argv[]) {
 
     const std::string imagePath = argv[1];
 
     cv::Mat imageData = readImage(imagePath, false);
-    std::pair<std::vector<cv::Point>, std::vector<cv::Point>> pixels = thresholdImage(imageData, 100, 200);
-    optimize(pixels.first, pixels.second);
+    std::vector<RLERun> rleRuns = processImage(imageData, 100, 200);
+
+    // for (const auto& run : rleRuns) {
+    //     std::cout << run.toString() << std::endl;
+    // }
+    for (const auto& run : rleRuns) {
+        if (run.color == BLACK && run.xValues.size() > 0) {
+            int x1 = run.xValues.front(); // First x-coordinate
+            int x2 = run.xValues.back();  // Last x-coordinate
+            int y = run.y;                 // Y-coordinate
+            std::string encodedLine = encodeLine(x1, y, x2, y);
+            std::cout << encodedLine; // Output the encoded line
+        }
+    }
+    for (const auto& run : rleRuns) {
+        if (run.color == GRAY && run.xValues.size() > 0) {
+            int x1 = run.xValues.front(); // First x-coordinate
+            int x2 = run.xValues.back();  // Last x-coordinate
+            int y = run.y;                 // Y-coordinate
+            std::string encodedLine = encodeLine(x1, y, x2, y);
+            std::cout << encodedLine; // Output the encoded line
+        }
+    }
+
 
     return 0;
 }
