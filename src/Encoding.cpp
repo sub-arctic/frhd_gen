@@ -1,4 +1,5 @@
 #include "Encoding.h"
+#include "ImageProcessing.h"
 #include <sstream>
 #include <cmath>
 
@@ -31,4 +32,28 @@ std::string encodeLine(int x1, int y1, int x2, int y2) {
     result << frhdEncode(x1) 
 	<< " " << frhdEncode(y1) << " " << frhdEncode(x2) << " " << frhdEncode(y2) << ",";
     return result.str();
+}
+
+// out is an ofstream object, can be consoleout or to a file
+void encodeTrack(std::ostream& out, const std::vector<RLERun>& rleRuns) {
+    for (const auto& run : rleRuns) {
+        if (run.color == 0 && !run.xValues.empty()) { // Assuming BLACK = 0
+            int x1 = run.xValues.front(); // first x-coordinate
+            int x2 = run.xValues.back();  // last x-coordinate
+            int y = run.y;                 // y-coordinate
+            std::string encodedLine = encodeLine(x1, y, x2, y);
+            out << encodedLine; // output the encoded line
+        }
+    }
+    out << "#";
+    for (const auto& run : rleRuns) {
+        if (run.color == 1 && !run.xValues.empty()) { // Assuming GRAY = 1
+            int x1 = run.xValues.front(); // first x-coordinate
+            int x2 = run.xValues.back();  // last x-coordinate
+            int y = run.y;                 // y-coordinate
+            std::string encodedLine = encodeLine(x1, y, x2, y);
+            out << encodedLine; // output the encoded line
+        }
+    }
+    out << "#" << std::endl;
 }

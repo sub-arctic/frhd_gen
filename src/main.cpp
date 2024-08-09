@@ -1,33 +1,73 @@
 #include <iostream>
+#include <fstream>
 #include "ImageProcessing.h"
 #include "Encoding.h"
 #include "RLERun.h"
+#include "ArgParser.hpp"
 
 int main(int argc, char* argv[]) {
-    const std::string imagePath = argv[1];
-    cv::Mat imageData = readImage(imagePath, false);
-    std::vector<RLERun> rleRuns = processImage(imageData, 100, 190);
+    ArgParser parser;
 
-    for (const auto& run : rleRuns) {
-        if (run.color == BLACK && run.xValues.size() > 0) {
-            int x1 = run.xValues.front(); // first x-coordinate
-            int x2 = run.xValues.back();  // last x-coordinate
-            int y = run.y;                 // y-coordinate
-            std::string encodedLine = encodeLine(x1, y, x2, y);
-            std::cout << encodedLine; // output the encoded line
+    // define options and flags:
+    parser.addOption("--input", "input file");
+    parser.addOption("--output", "output file");
+    parser.addFlag("--verbose", "enable verbose output");
+
+    try {
+        // parse the command-line arguments
+        parser.parse(argc, argv);
+
+        // retrieve the values
+        std::string inputFile = parser.getOption("--input");
+        std::string outputFile = parser.getOption("--output");
+        bool verbose = parser.getFlag("--verbose");
+
+        // use the parsed values
+        if (verbose) {
+            std::cout << "verbose mode enabled." << std::endl;
         }
-    }
-    std::cout << "#";
-    for (const auto& run : rleRuns) {
-        if (run.color == GRAY && run.xValues.size() > 0) {
-            int x1 = run.xValues.front(); // first x-coordinate
-            int x2 = run.xValues.back();  // last x-coordinate
-            int y = run.y;                 // y-coordinate
-            std::string encodedLine = encodeLine(x1, y, x2, y);
-            std::cout << encodedLine; // output the encoded line
+
+        if (!inputFile.empty()) {
+            if (verbose) {
+                std::cout << "input file: " << inputFile << std::endl;
+            }
+
+            // read the image data
+            cv::Mat imageData = readImage(inputFile, false);
+            std::vector<RLERun> rleRuns = processImage(imageData, 100, 190);
+
+            // output to file or console
+            if (!outputFile.empty()) {
+                std::ofstream outputStream(outputFile);
+                if (outputStream.is_open()) {
+                    encodeTrack(outputStream, rleRuns);
+                    outputStream.close();
+                    if (verbose) {
+                        // check the size of the output file
+                        std::ifstream inFile(outputFile, std::ios::binary | std::ios::ate);
+                        if (inFile) {
+                            std::streamsize size = inFile.tellg(); // get the size
+                            std::cout << "output written to: " << outputFile << " (size: " << size/1024 << " kilobytes, max upload is 1000 kilobytes)" << std::endl;
+                        } else {
+                            std::cerr << "error opening file to check size: " << outputFile << std::endl;
+                        }
+                    }
+                } else {
+                    std::cerr << "error opening file for writing: " << outputFile << std::endl;
+                }
+            } else {
+                encodeTrack(std::cout, rleRuns); // output to console
+            }
+        } else {
+            std::cerr << "error: input file not specified." << std::endl;
+            return 1;
         }
+
+    } catch (const std::runtime_error& e) {
+        std::cerr << "error: " << e.what() << std::endl;
+        return 1;
     }
-    std::cout << "#" << std::endl;
 
     return 0;
 }
+
