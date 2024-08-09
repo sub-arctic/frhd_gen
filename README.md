@@ -45,9 +45,11 @@ Future versions will see better stability and features, but as this is a persona
 ## Running
 
 ```bash
-./image2track ~/path/to/image.png
+./image2track --input ~/path/to/image.png 
 ```
-This will output the generated track code to stdout, redirection through a pipe or similar is recommended.
+- Optional flags:
+    - `--output`: sets the path for the track output. Defaults to terminal output
+    - `--verbose`: adds some more verbose logging, including track size checking
 
 ## Disclaimer
 I am in no way responsible for the usage and utilization of this tool. By using this tool, you agree to use it in a responsible manner with good intent. Any created works that violate free rider hd's terms of service are not endorsed or encouraged by me. Please use this tool ethically and responsibly.
