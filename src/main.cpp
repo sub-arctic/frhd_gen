@@ -3,7 +3,7 @@
 #include "ImageProcessing.h"
 #include "Encoding.h"
 #include "RLERun.h"
-#include "ArgParser.hpp"
+#include "ArgParser.h"
 
 int main(int argc, char* argv[]) {
     ArgParser parser;

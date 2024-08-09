@@ -1,2 +1,0 @@
-#ifndef FLAGS_H
-
