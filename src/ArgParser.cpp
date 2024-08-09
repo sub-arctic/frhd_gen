@@ -1,19 +1,19 @@
-#include "ArgParser.hpp"
+#include "ArgParser.h"
 #include <iostream>
 
-// Adds an option that requires a value
+// adds an option that requires a value
 void ArgParser::addOption(const std::string& option, const std::string& description) {
     options[option] = "";
     descriptions[option] = description;
 }
 
-// Adds a flag that does not require a value
+// adds a flag that does not require a value
 void ArgParser::addFlag(const std::string& flag, const std::string& description) {
     flags[flag] = false;
     descriptions[flag] = description;
 }
 
-// Parses command-line arguments
+// parses command-line arguments
 void ArgParser::parse(int argc, char* argv[]) {
     for (int i = 1; i < argc; ++i) {
         std::string arg = argv[i];
@@ -35,17 +35,17 @@ void ArgParser::parse(int argc, char* argv[]) {
     }
 }
 
-// Retrieves the value of a specified option
+// retrieves the value of a specified option
 std::string ArgParser::getOption(const std::string& option) {
     return options[option];
 }
 
-// Checks if a specified flag is set
+// checks if a specified flag is set
 bool ArgParser::getFlag(const std::string& flag) {
     return flags[flag];
 }
 
-// Prints the help message with available options and flags
+// prints the help message with available options and flags
 void ArgParser::printHelp() {
     std::cout << "Usage:\n";
     for (const auto& [key, desc] : descriptions) {
