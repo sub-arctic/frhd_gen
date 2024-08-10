@@ -8,11 +8,11 @@
 
 struct RLERun
 {
-  int y;
-  std::vector<int> xValues;
-  PixelColor color;
+    int y;
+    std::vector<int> xValues;
+    PixelColor color;
 
-  std::string toString() const;
+    std::string toString() const;
 };
 
 #endif // RLERUN_H
