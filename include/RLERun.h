@@ -1,12 +1,13 @@
 #ifndef RLERUN_H
 #define RLERUN_H
 
-#include <vector>
-#include <string>
-#include <sstream>
 #include "PixelColor.h"
+#include <sstream>
+#include <string>
+#include <vector>
 
-struct RLERun {
+struct RLERun
+{
     int y;
     std::vector<int> xValues;
     PixelColor color;
